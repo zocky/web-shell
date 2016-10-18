@@ -1,182 +1,159 @@
-class FileDialog {
-  constructor(shell,{title,root,path,ok,cancel}) {
-    this.shell = shell;
-    this.$dialog = $('<div class="ui modal">').appendTo('body');
-    $('<i class="close icon">').appendTo(this.$dialog);
-    this.$header = $('<div class="header">').appendTo(this.$dialog).text(title||'Files');
 
-    var $content = $('<div class="ui internally celled grid">').appendTo(this.$dialog);
-    var $bar = $('<div class="sixteen wide column">').appendTo($content)
+
+class FileDialog {
+  constructor(shell,{title,root,path,ok,types,cancel}) {
+    this.shell = shell;
+    this.$dialog = $('<div class="ui modal">').appendTo('body')
+    .append(
+      '<i class="close icon">',
+      this.$header = $('<div class="header">').text(title||'Files'),
+      $('<div class="ui internally celled grid">').append(
+
+        $('<div class="row">').append(
+          this.$directories = $('<div class="ui four wide column directories">').css({'height':'100%','overflow-y':'auto'}),
+          $('<div class="twelve wide column">').css({padding:0}).append(
+            this.$menu = $('<div class="ui attached fluid menu">').css({border:'none',borderBottom:'solid 1px #d4d4d5',margin:0,width:'100%'}).append(
+              $('<div class="item">').css({flex:1}).append(
+                $('<div class="ui input">').append(
+                  this.$input = $('<input type="text">')
+                )
+              ),
+              this.$typesDropdown = $('<div class="ui dropdown item">').append(
+                '<input type="hidden" name="gender">',
+                '<div class="default text">Select type</div>',
+                '<i class="dropdown icon">',
+                this.$types= $('<div class="menu">')
+              ),
+              this.$mkdir = $('<a class="icon item">').append(
+                '<i class="icons"><i class="folder icon"></i><i class="corner add icon"></i></i>'
+              )
+            ),
+            this.$files = $('<div class="twelve wide column files">').css({'height':'40vh','overflow-y':'auto'})
+          )
+        )        
+      ),
+      this.$actions = $('<div class="actions">').append(
+        this.$cancel = $('<a class="ui cancel button">').text(cancel || 'Cancel'),
+        this.$ok = $('<a class="ui blue approve button">').text(ok || 'OK')
+      )
+    );
     
-    this.$input =$('<input type="text">').appendTo($bar).wrap('<div class="ui fluid input">')
+    if (!Object.keys(types).length) types = {'*/*':'Any File'};
     
-    var $actions = $('<div class="actions">').appendTo(this.$dialog);
-    this.$cancel = $('<a class="ui button">').appendTo($actions).text(cancel || 'Cancel');
-    this.$ok = $('<a class="ui blue button">').appendTo($actions).text(ok || 'OK');
+    for(var t in types) {
+      this.$types.append(
+        $('<a class="item">').attr('data-value',t).text(types[t])
+      )
+    }
     
-    var $inner = $('<div class="row">').appendTo($content).css('height','40vh');
     
-    this.$directories = $('<div class="ui list four wide column directories">').text('dirs').appendTo($inner);
-    this.$files = $('<div class="ui celled selection list twelve wide column files">').text('files').appendTo($inner);
     
+
     this.root = root || '/';
     this.path = path || this.root;
-    this.loadRoot();
+    this.filename = '';
+    this.selected = null;
+    
+    this.$input.on('input',(e)=>{
+      this.listView.search(this.$input.val())
+      this.filename = this.$input.val();
+    })
+    
+    this.listView = this.$files.listView(this.shell,{
+      cwd:this.root,
+      on: {
+        select: (file) => {
+          this.filename = file ? file.filename : '';
+          this.selected = file;
+          this.$input.val(this.filename);
+        },
+        dblclick: (file) => {
+          if (file.type==='directory') this.treeView.cd(file.path);
+        },
+        cd:(cwd) => {
+          this.cwd = cwd;
+        }
+      }
+    });
+    this.treeView = this.$directories.treeView(this.shell,{
+      root:this.root,
+      cwd:this.path,
+      on: {
+        cd: (cwd) => {
+          this.listView.cd(cwd);
+        }
+      }
+    });
+    //this.loadRoot();
+    this.$typesDropdown.dropdown({
+      onChange: (t)=>{
+        this.type = t;
+        this.listView.type = t;
+      }
+    })
+    
+    this.$typesDropdown.dropdown('set selected',Object.keys(types)[0]);
+    
+    this.$dialog.modal({
+      onApprove: () => this.ok(),
+      onDeny: () => this.cancel(),
+    })
+  }
+  cd(path,cb) {
+    this.treeView.cd(path,cb)
   }
   error(err,cont) {
     console.error(err.message||err,cont)
   }
-  loadRoot() {
-    this.$directories.html('');
-    this.shell.list(this.root,(err,res)=>{
-      if (err) return this.error(err,this.$directories);
-      res.forEach((file)=>{
-        if (file.type!=='directory') return;
-        this.$directories.append(this.$dir(file));
-        this.cd(this.path)
-      })
-    })
-  }
-  fillDirs($n,files) {
-    var $list = $n.data('$list');
-    $list.html('');
-    files.forEach(file=>$list.append(this.$dir(file)));
-    if(!files.length) $n.removeClass('expanded').removeClass('collapsed').addClass('empty')
-  }
-  fillFiles(files) {
-    this.$files.html('');
-    files.forEach(file=>this.$files.append(this.$file(file)));
-  }
-  show(cb){
-    this.$dialog.modal({onApprove:cb});
+ 
+  show(){
     this.$dialog.modal('show');
   }
-  select($n) {
-    var file =$n.data('file');
-    this.$files.find('.active').removeClass('active');
-    $n.addClass('active');
-    this.$input.val(file.path);
-    this.selected = file;
-  }
-  deselect() {
-    this.$files.find('.active').removeClass('active');
-    this.$input.val(this.cwd);
-    this.selected = null;
-  }
-  cd(path) {
-    var parts = [path].join('/').split('/').filter(Boolean);
-    var found;
-    var unopened=[];
-    do {
-      var p = "/"+parts.join('/');
-      found = this.$directories.find('[data-path="'+p+'"]').data('file');
-      if(!found) unopened.unshift(p);
-      parts.pop();
-    } while (!found && parts.length) 
-    if(!found) return;
-    
-    unopened.unshift(found.path);
-    console.log(unopened)
-    var $last
-    var expand = () => {
-      var p = unopened.shift();
-      var $n = this.$directories.find('[data-path="'+p+'"]');
-      if (!$n.length) return this.selectDirectory($last);
-      $last = $n;
-      if (unopened.length) {
-        this.expandDirectory($last,(err,res)=>{
-          console.log('unop',unopened.length)
-          if(err) return this.selectDirectory($last);
-          else expand()
-        })  
-      } else {
-        return this.selectDirectory($last);
-      }
-    }
-    expand()
-  }
-  expandDirectory($n,cb) {
-    console.log('expanding',$n.data('file'))
-    if ($n.data('loaded')) {
-      $n.removeClass('collapsed').addClass('expanded');
-      return cb && cb(null);
-    }
-    if ($n.hasClass('loading')) return cb && cb('already loading')
-    var file = $n.data('file');
-    $n.addClass('loading');
-    this.shell.list(file.path,(err,res)=>{
-      if (err) return cb && cb(err);
-      $n.removeClass('loading');
-      $n.data('loaded',true)
-      var dirs = res.filter(file=>file.type==='directory');
-      $n.removeClass('collapsed').addClass('expanded');
-      this.fillDirs($n,dirs);
-      cb && cb(null);
-    })
-  }
-  collapseDirectory($n,cb) {
-    $n.removeClass('expanded').addClass('collapsed');
-  }
-  selectDirectory($n) {
-    var file = $n.data('file');
-    if (this.cwd == file.path && $n.hasClass('active')) return;
-    this.cwd = file.path;
-    console.log('cd',this.cwd);
-    var $list = $n.data('$list');
-      
-    this.$directories.find('.active').removeClass('active');
-    $n.addClass('active');
-    this.$input.val(file.path)
   
-    this.shell.list(file.path,(err,res)=>{
-      if (err) return this.error(err,this.$files);
-      var dirs = res.filter(file=>file.type==='directory')
-      var files = res.filter(file=>file.type!=='directory')
-      this.fillFiles(dirs.concat(files));
-    })
+  ok() {
+    console.log('OK',this.selected)
+    return false;
   }
-  $dir(file) {
-    var $n = $('<div class="item collapsed">');
-    var $expand = $('<i class="right caret icon expand">').appendTo($n);
-    var $collapse = $('<i class="down caret icon collapse">').appendTo($n);
-    $('<i class="icon placeholder">').appendTo($n);
-    var $content = $('<div class="content">').appendTo($n);
-    var $header = $('<div class="header">').text(file.filename).appendTo($content);
-    var $list = $('<div class="list">').appendTo($content)
-    $n.data({file,$list});
-    $n.attr('data-path',file.path)
-    $header.click((e)=>this.selectDirectory($n));
-    $expand.click((e)=>{
-      this.expandDirectory($n);
-    })
-    $collapse.click((e)=>{
-      $n.removeClass('expanded').addClass('collapsed');
-    })
-    return $n;
-  }
-  icon(file) {
-    return 'http://mimeicon.herokuapp.com/'+file.type+'?size=32&default=text/plain';
-  }
-  $file(file) {
-    var $n = $('<a class="item">');
-    var $icon = $('<img class="image">').attr('src',this.icon(file)).appendTo($n);
-    var $content = $('<div class="content">').appendTo($n);
-    var $header = $('<div class="header">').text(file.filename).appendTo($content);
-    var $description = $('<div class="description">').text(file.type).appendTo($content);
-    if (file.type=='directory') $n.dblclick(e=>{
-      this.cd(file.path);
-    })
-    $n.data({file});
-    $n.click(()=>this.select($n));
-    return $n;
+  cancel() {
   }
 }
 
-class FileOpenDialog extends FileDialog {
-  constructor(shell,opt) {
+class ApplicationFileDialog extends FileDialog {
+  constructor(app,opt) {
+    super(app.shell,opt);
+    this.app = app;
+  }
+}
+
+class FileOpenDialog extends ApplicationFileDialog {
+  constructor(app,opt={}) {
     opt.title = opt.title || 'Open file';
-    super(shell,opt)
-    this.$input.attr('disabled','disabled')
+    opt.types = opt.types || {};
+    opt.types['*/*']='Any File';
+    super(app,opt)
+//    this.$input.attr('disabled','disabled')
+  }
+  ok() {
+    if (!this.selected) return false;
+    if (this.selected.type == 'directory') {
+      this.cd(this.selected.path);
+      return false;
+    }
+    this.app.open(this.selected.path);
   }
 }
 
+class FileSaveDialog extends ApplicationFileDialog {
+  constructor(app,opt={}) {
+    opt.title = opt.title || 'Save file';
+    super(app,opt)
+  }
+  ok() {
+    if (this.selected && this.selected.type == 'directory') {
+      this.cd(this.selected.path);
+      return false;
+    }
+    if (!this.selected) return false;
+    this.app.save(this.type,this.cwd+'/'+this.filename);
+  }
+}

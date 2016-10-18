@@ -22,58 +22,7 @@ div#app > iframe {
   height:100%;
 }
 
-.ui.directories.list .item .list:empty{
-  display:none;
-}
-
-.ui.directories.list .item .list{
-  padding-top:0.5em;
-}
-
-.ui.directories.list .item > .content > .header {
-  margin: 0;
-  padding: 2px 4px;
-  border-radius: 2px;
-  text-align: center;
-  cursor:pointer;
-  display:inline;
-}
-
-.ui.directories.list .item.active > .content > .header {
-  background:#ddd;
-}
-
-.ui.directories.list .item.active > .content > .header:hover {
-  background:#eee;
-}
-
-
 .ui.files.list {
   margin:0!important;
   padding:0!important;
-}
-
-.ui.directories.list .item.collapsed > .content >.list,
-.ui.directories.list .item.collapsed > i.collapse,
-.ui.directories.list .item.collapsed > i.placeholder {
-  display:none!important;
-}
-
-.ui.directories.list .item.expanded > i.expand,
-.ui.directories.list .item.expanded > i.placeholder {
-  display:none!important;
-}
-
-.ui.directories.list .item.empty > i.expand,
-.ui.directories.list .item.empty > i.collapse {
-  display:none!important;
-}
-
-.ui.directories.list .item > i.expand,
-.ui.directories.list .item > i.collapse,
-.ui.directories.list .item > i.placeholder {
-  margin:0;
-  width: 10px;
-  margin: 0;
-  padding: 0;
 }

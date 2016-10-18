@@ -21,34 +21,7 @@
   </head>
   <body>
     
-    <template name="tree">
-      <div class="tree" data-path="{{path}}">
-        <div class="ui list">
-          
-        </div>
-      </div>
-    </template>
-    <template name="node">
-      <div class="item tree-node closed" data-path="{{path}}" data-type="{{type}}">
-        <i class="right caret icon open-node"></i>
-        <i class="down caret icon close-node"></i>
-        <div class="content">
-          <a class="header">{{name}}</a>
-          <div class="description">{{description}}</div>
-          <div class="list"></div>
-        </div>
-      </div>
-    </template>
-
-    <template name="item">
-      <a class="basic button item" data-path="{{path}}" data-type="{{type}}">
-        <i class="file icon"></i>
-        <div class="content">
-          <div class="header">{{name}}</div>
-          <div class="description">{{description}}</div>
-        </div>
-      </a>
-    </template>
+  
 
     <div class="ui top fixed menu">
       <div class="header item">Web Shell</div>
@@ -56,18 +29,18 @@
         File
         <i class="dropdown icon"></i>
         <div class="menu">
-          <a class="item">New</a>
+          <a class="item" data-action="file-new">New</a>
           <a class="item" data-action="file-open">Open</a>
-          <a class="item">Save</a>
+          <a class="item" data-action="file-save">Save</a>
         </div>
       </div>
-      <a class="icon item">
+      <a class="icon item"  data-action="file-new">
         <i class="file icon"></i>
       </a>
       <a class="icon item" data-action="file-open">
         <i class="open folder icon"></i>
       </a>
-      <a class="icon item">
+      <a class="icon item"  data-action="file-save">
         <i class="save icon"></i>
       </a>
     </div>
@@ -75,23 +48,6 @@
       
     </div>
 
-    <div id="dialog-file-open" class="ui modal">
-      <i class="close icon"></i>
-      <div class="header">
-        Open file
-      </div>
-      <div class="content" style="height:50vh;display:flex"> 
-        <div class="directories" style="flex:0 1 250px">
-        </div>
-        <div class="files" style="flex:1 1 0">
-          <div class="ui selection list"></div>
-        </div>
-      </div>
-      <div class="actions">
-        <button class="ui button cancel">Cancel</button>
-        <button class="ui blue button approve">Open</button>
-      </div>
-    </div>
     <!-- Your web-app is https, so your scripts need to be too -->
     <script src="https://code.jquery.com/jquery-2.2.1.min.js"
             integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00="
@@ -100,6 +56,8 @@
     <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
     <script src="/src/Shell.js"></script>
     <script src="/src/DirectoryService.js"></script>
+    <script src="/maybe/TreeView.js"></script>
+    <script src="/maybe/ListView.js"></script>
     <script src="/src/FileDialog.js"></script>
     <script src="/client.js"></script>
 
