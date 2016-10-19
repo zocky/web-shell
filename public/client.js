@@ -9,17 +9,9 @@ function $template(name,data) {
 
 
 $(function(){
-  $('.ui.dropdown').dropdown();
-  $('[data-action="file-open"]').click(function(){
-    shell.container.dialogs.open.show();
-  })
-  
-  $('[data-action="file-save"]').click(function(){
-    shell.container.dialogs.save.show();
-  })
-  $('[data-action="file-new"]').click(function(){
-    shell.container.new();
-  })
-  
+  console.log('hello');
   shell.openApplication('https://pebble-wolf.hyperdev.space/');
 })
+
+
+

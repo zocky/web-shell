@@ -1,16 +1,36 @@
-$.fn.treeView = function(shell,opt={}) {
-  var $view = $(this);
-  var pos = $view.css('position');
-  if(pos != 'absolute' && pos!='fixed' && pos!='relative') $view.css('position','relative');
+Shell.create.treeView = function(shell,opt={}) {
   
-  var $list = $('<div class="ui list">');
-  $view.append($list)
+  var $view,$list;
   var error = opt.error || console.error.bind(console);
   var log = opt.log || console.log.bind(console);
   
   var root = opt.root || '/';
   var cwd = opt.cwd || root;
+
+  var view = {
+    get root() {
+      return root;
+    },
+    get cwd() {
+      return cwd;
+    },
+    cd: cd,
+  };
+  build();
+  loadRoot();
+  return view;
   
+  function build() {
+    $list = $('<div class="ui list">').css({
+      position:'absolute',
+      top:0, left:0, bottom:0, right:0,
+      overflowY:'auto'
+    });
+    $view = $(opt.container||'body');
+    var pos = $view.css('position');
+    if(pos != 'absolute' && pos!='fixed' && pos!='relative') $view.css('position','relative');
+    $view.append($list)
+  }
   
   function loadRoot() {
     shell.list(root,(err,res)=>{
@@ -171,16 +191,4 @@ $.fn.treeView = function(shell,opt={}) {
     $n.data({file});
     return $n;
   }
-
-  var view = {
-    get root() {
-      return root;
-    },
-    get cwd() {
-      return cwd;
-    },
-    cd: cd,
-  };
-  loadRoot();
-  return view;
 }

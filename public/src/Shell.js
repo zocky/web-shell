@@ -6,7 +6,9 @@ class Shell {
     window.addEventListener('message',(e)=>{
       this.receive(e);
     })
-    this.containers = {}
+    this.windows = {};
+    this.create = {};
+    for (var i in Shell.create) this.create[i] = Shell.create[i].bind(this,this);
   }
   stat(path,cb) {
     this.root.stat(path,cb||console.log.bind(console))
@@ -23,38 +25,51 @@ class Shell {
     
     this.root.read(path,(err,res)=>{
       if(err) return cb(err);
-      console.log('content',encoding,res)
-      switch(encoding) {
-      case 'string':
+      try {
         var td = new TextDecoder();
-        res.content = td.decode(res.content);
-        break;
-      case 'object':
-        var td = new TextDecoder();
-        try {
+        console.log('content',encoding,res)
+        switch(encoding) {
+        case 'string':
+          res.content = td.decode(res.content);
+          break;
+        case 'object':
           res.content = JSON.parse(td.decode(res.content));
-        } catch (err) {
-          return cb(err)
+          break;
+        case 'dataurl':
+          res.content = 'data:'+res.file.type+';base64,'+Base64.btoa(res.content);
+          break;
         }
-        break;
+        cb(null,res)
+      } catch (err) {
+        return cb(err)
       }
-      cb(null,res)
     })
-    
   }
   write(path,type,content,encoding,cb) {
     cb = cb||console.log.bind(console);
     try {
       if(typeof encoding==='function') cb=encoding, encoding=null;
+      var te = new TextEncoder();
       switch(encoding) {
       case 'string':
-        var te = new TextEncoder();
         content = te.encode(content);
         break;
       case 'object':
-        var te = new TextEncoder();
         content = te.encode(JSON.stringify(content));
         break;
+      case 'dataurl': 
+        var parts = content.match(/^data:([^;]+)(;base64,)([\s\S]*)$/);
+        if (!parts) return cb ('bad data uri');
+        if (parts[1] != type) return cb('bad type');
+        content = parts[3];
+        if(parts[2]) content = Base64.atob(content);
+        else content = te.encode(content);
+        break;
+      case 'binary':
+        content = content;
+        break;
+      default: 
+        return cb('bad encoding')
       }
       this.root.write(path,type,content,cb)
     } catch(err) {
@@ -63,13 +78,14 @@ class Shell {
   }
   openApplication(url) {
     $('#app').html('');
-    var container = new ApplicationContainer(this,{where:'#app',url:url});
-    this.container = this.containers[container.id]=container;
+    var container = this.create.appWindow(url,{});
+
+    this.container = this.windows[container.id]=container;
     return container;
   }
   receive(e) {
-    for(let id in this.containers) {
-      let cont = this.containers[id];
+    for(let id in this.windows) {
+      let cont = this.windows[id];
       if (cont.iframe.contentWindow !== e.source) continue;
       if (cont.origin !== e.origin) continue;
       cont.receive(e.data);
@@ -77,6 +93,8 @@ class Shell {
     }
   }
 }
+
+Shell.create = {};
 
 Shell.utils = {
   uuid() {
@@ -171,7 +189,9 @@ class ApplicationContainer {
   }
   save(type,path,cb) {
     var m = this.manifest.files.open.find(t=>t.type===type);
-    if(!m) cb&&cb('wrong type')
+    console.log('save1',m);
+    if(!m) cb&&cb('wrong type');
+    console.log('save2',m);
     this.send({
       action:'save',
       type:type,

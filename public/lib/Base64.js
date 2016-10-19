@@ -1,10 +1,10 @@
-base64 = (function() {
+Base64 = (function() {
   
   var exports = {};
   
   exports.byteLength = byteLength
-  exports.toByteArray = toByteArray
-  exports.fromByteArray = fromByteArray
+  exports.atob = toByteArray
+  exports.btoa = fromByteArray
   
   var lookup = []
   var revLookup = []
@@ -115,4 +115,4 @@ base64 = (function() {
     return parts.join('')
   }
   return exports;
-})
+})();

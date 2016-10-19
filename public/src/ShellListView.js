@@ -1,15 +1,45 @@
-$.fn.listView = function(shell,opt={}) {
-  var $view = $(this);
-  var pos = $view.css('position');
-  if(pos != 'absolute' && pos!='fixed' && pos!='relative') $view.css('position','relative');
-  var $list = $('<div class="ui celled selection list">');
-  $view.append($list)
-  
+Shell.create.listView = function(shell,opt={}) {
+  var $list, $view;
   var error = opt.error || console.error.bind(console);
   var log = opt.log || console.log.bind(console);
   
   var cwd = opt.cwd || root;
   var selected = null;
+  
+  var view = {
+    get cwd() {
+      return cwd;
+    },
+    get selected() {
+      return selected;
+    },
+    get type() {
+      return type;
+    },
+    set type(t) {
+      setType(t);
+    },
+    cd: cd,
+    select: select,
+    search: search,
+    on: {
+      cd: function(){}
+    }
+  };
+  build();
+  return view;
+
+  function build() {
+    $list = $('<div class="ui celled selection list">').css({
+      position:'absolute',
+      top:0, left:0, bottom:0, right:0,
+      overflowY:'auto'
+    });
+    $view = $(opt.container||'body');
+    var pos = $view.css('position');
+    if(pos != 'absolute' && pos!='fixed' && pos!='relative') $view.css('position','relative');
+    $view.append($list)
+  }
   
   function loadFiles(path,cb) {
     shell.list(path,cb);
@@ -100,7 +130,7 @@ $.fn.listView = function(shell,opt={}) {
     $list.find('.active').removeClass('active');
   }
 
- function $item(file) {
+  function $item(file) {
     var $n = $('<a class="item">');
     var $icon = $('<img class="image">').attr('src',icon(file)).appendTo($n);
     var $content = $('<div class="content">').appendTo($n);
@@ -116,26 +146,4 @@ $.fn.listView = function(shell,opt={}) {
     $n.click(()=>select(file.filename));
     return $n;
   }
-
-  var view = {
-    get cwd() {
-      return cwd;
-    },
-    get selected() {
-      return selected;
-    },
-    get type() {
-      return type;
-    },
-    set type(t) {
-      setType(t);
-    },
-    cd: cd,
-    select: select,
-    search: search,
-    on: {
-      cd: function(){}
-    }
-  };
-  return view;
 }
