@@ -78,6 +78,7 @@ Shell.create.listView = function(shell,opt={}) {
     console.log('cd',path)
     if(path===cwd) return;
     deselect();
+    on_select();
     loadFiles(path,(err,res)=>{
       if (err) return cb && cb(err);
       cwd=path;
@@ -128,6 +129,7 @@ Shell.create.listView = function(shell,opt={}) {
   function deselect() {
     selected = null;
     $list.find('.active').removeClass('active');
+    on_select();
   }
 
   function $item(file) {

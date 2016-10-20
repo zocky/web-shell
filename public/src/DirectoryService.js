@@ -1,3 +1,5 @@
+
+
 class DirectoryService {
   _root_stat() {
     throw('not implemented');
@@ -106,7 +108,11 @@ class DirectoryServiceRoot extends DirectoryService {
   stat(p,cb) {
     var {id,ds,path} = this._split(p);
     if(!ds) return cb('not found');
-    ds.stat(path,cb);
+    ds.stat(path,(err,file)=>{
+      if(err) cb(err);
+      file.path='/'+id+'/'+file.path;
+      cb(null,file);
+    });
   }
   read(p,cb) {
     var {id,ds,path} = this._split(p);

@@ -18,7 +18,7 @@
         $('<div class="ui internally celled grid">').append(
   
           $('<div class="row">').append(
-            this.$directories = $('<div class="ui four wide column directories">').css({'height':'100%','overflow-y':'auto'}),
+            this.$directories = $('<div class="ui four wide column directories">').css({'overflow-y':'auto'}),
             $('<div class="twelve wide column">').css({padding:0}).append(
               this.$menu = $('<div class="ui attached fluid menu">').css({border:'none',borderBottom:'solid 1px #d4d4d5',margin:0,width:'100%'}).append(
                 $('<div class="item">').css({flex:1}).append(
@@ -66,18 +66,21 @@
         this.listView.search(this.$input.val())
         this.filename = this.$input.val();
       })
-      console.log('shell0',this.shell)
       this.listView = this.shell.create.listView({
         container: this.$files,
         cwd:this.root,
         on: {
           select: (file) => {
-            this.filename = file ? file.filename : '';
+            if(file) {
+              this.filename = file.filename;
+              this.$input.val(this.filename);
+            }
             this.selected = file;
-            this.$input.val(this.filename);
+            
           },
           dblclick: (file) => {
             if (file.type==='directory') this.treeView.cd(file.path);
+            else this.$ok.click();
           },
           cd:(cwd) => {
             this.cwd = cwd;
@@ -149,16 +152,14 @@
         this.cd(this.selected.path);
         return false;
       }
-      console.log(this.selected);
       this.app.open(this.selected.path);
     }
   }
   
   class FileSaveDialog extends ApplicationFileDialog {
     constructor(shell,app,opt={}) {
-      console.log(shell,app,opt)
-      //opt.title = opt.title || 'Save file';
-      //opt.types = opt.types || {};
+      opt.title = opt.title || 'Save file';
+      opt.types = opt.types || {};
       super(shell,app,opt)
     }
     ok() {
@@ -166,8 +167,8 @@
         this.cd(this.selected.path);
         return false;
       }
-      if (!this.selected) return false;
-      this.app.save(this.type,this.cwd+'/'+this.filename);
+      if (!this.filename) return false;
+      this.app.save(this.cwd+'/'+this.filename,this.type);
     }
   }
 })()
